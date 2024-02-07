@@ -46,6 +46,7 @@ class LSTM(nn.Module):
         return predictions[-1]
 
 def LSTM_model_training(data,learning_rate,tw=12,predicttime=12):
+    print(len(data))
     scaler = MinMaxScaler(feature_range=(-1, 1))
     processed_train_data = scaler.fit_transform(data.reshape(-1, 1))
     train_data_normalized = torch.FloatTensor(processed_train_data).view(-1)
@@ -81,7 +82,7 @@ def LSTM_model_training(data,learning_rate,tw=12,predicttime=12):
     test_inputs = train_data_normalized[-train_window:].tolist()
     model.eval()
     
-    for i in range(predicttime):
+    for i in range(predicttime+2):
         seq = torch.FloatTensor(test_inputs[-train_window:])
         with torch.no_grad():
             model.hidden_cell = (torch.zeros(1, 1, model.hidden_layer_size),
@@ -92,6 +93,7 @@ def LSTM_model_training(data,learning_rate,tw=12,predicttime=12):
     return pre,model
 
 def LSTM_model_test(data,learning_rate,tw=12,predicttime=12):
+    Le = len(data)
     scaler = MinMaxScaler(feature_range=(-1, 1))
     processed_train_data = scaler.fit_transform(data.reshape(-1, 1))
     train_data_normalized = torch.FloatTensor(processed_train_data).view(-1)
@@ -105,8 +107,7 @@ def LSTM_model_test(data,learning_rate,tw=12,predicttime=12):
     model.eval()
 
     test_inputs = train_data_normalized[-train_window:].tolist()
-    
-    for i in range(predicttime):
+    for i in range(predicttime+2):
         seq = torch.FloatTensor(test_inputs[-train_window:])
         with torch.no_grad():
             model.hidden_cell = (torch.zeros(1, 1, model.hidden_layer_size),
@@ -117,9 +118,7 @@ def LSTM_model_test(data,learning_rate,tw=12,predicttime=12):
     return pre,model
 
 def predict(training = 1):
-    base_dir = os.path.dirname(os.path.realpath('__file__'))
-    print(base_dir)
-    
+    base_dir = os.path.dirname(os.path.realpath('__file__'))   
     parent_dir = os.path.dirname(base_dir)
     dataset_dir = os.path.join(parent_dir, 'dataset')
     dataset_path = os.path.join(dataset_dir, 'data.csv')
@@ -127,6 +126,8 @@ def predict(training = 1):
     #Set year as index
     source_data = pd.read_csv(dataset_path)
     source_data['year'] = pd.to_datetime(source_data['year'], format='%Y')
+    current_date = source_data['year'].values[-1]
+    print(current_date)
     source_data = source_data.sort_values(by=['year'])
     source_data = source_data.set_index(['year',])
     train_data=source_data[source_data['id']=='USA']
@@ -137,8 +138,8 @@ def predict(training = 1):
     
     #删去target列,cty_name和id
     processed_train_data=processing_data(target_1).values
-    tw=[10,12,15]
-    predicttime=[10,12,15]
+    tw=[6,8,10,12]
+    predicttime=[8]
     lr=[0.01,0.05]
     MSE=1000000
     combination=[0,0,0]
@@ -156,8 +157,8 @@ def predict(training = 1):
                 else:
                     result,model=LSTM_model_test(processed_train_data[:-pt],lrate,wind,pt)                   
                 result=np.array(result)
-                print(result-np.array(processed_train_data[-pt:]))
-                MSE_r =np.mean(np.sum((result-np.array(processed_train_data[-pt:]))**2))
+                print(result[:-2]-np.array(processed_train_data[-pt:]))
+                MSE_r =np.mean(np.sum((result[:-2]-np.array(processed_train_data[-pt:]))**2))
                 #find best prediction:
                 if MSE_r < MSE:
                     MSE = MSE_r
@@ -170,15 +171,15 @@ def predict(training = 1):
                     fm = model  
                 
     #vasualization:
-    x = range(0,combination[1])
+    x = range(0,predicttime[0]+2)
     years = []
     for i in x[::-1]:
-        years.append(pd.to_datetime(str(2014))-pd.DateOffset(years=i))
+        years.append(current_date + pd.DateOffset(years=2) - pd.DateOffset(years=i))
     
     va_y = processed_train_data[-combination[1]:]
     plt.plot(years,va_pred,label = 'model test')
     x = range(1,len(va_pred)+1)
-    plt.plot(years,va_y)
+    plt.plot(years[:-2],va_y)
     plt.xlabel('last predicted years')
     plt.xlabel('last predicted years')
     plt.legend()
