@@ -117,14 +117,9 @@ def LSTM_model_test(data,learning_rate,tw=12,predicttime=12):
     pre = scaler.inverse_transform(pre.reshape(-1,1))
     return pre,model
 
-def predict(training = 1):
-    base_dir = os.path.dirname(os.path.realpath('__file__'))   
-    parent_dir = os.path.dirname(base_dir)
-    dataset_dir = os.path.join(parent_dir, 'dataset')
-    dataset_path = os.path.join(dataset_dir, 'data.csv')
-    
+def predict(data,training = 1):
     #Set year as index
-    source_data = pd.read_csv(dataset_path)
+    source_data = data
     source_data['year'] = pd.to_datetime(source_data['year'], format='%Y')
     current_date = source_data['year'].values[-1]
     print(current_date)
@@ -133,8 +128,8 @@ def predict(training = 1):
     train_data=source_data[source_data['id']=='USA']
     
     #target列设置为oil_price_2000
-    target_1=pd.DataFrame(train_data['oil_price_2000'],index=train_data['oil_price_2000'].index,columns=['oil_price_2000'])
-    target_2=pd.DataFrame(train_data['gas_price_2000'],index=train_data['gas_price_2000'].index,columns=['gas_price_2000'])
+    target_1=pd.DataFrame(train_data['oil_price'],index=train_data['oil_price'].index,columns=['oil_price'])
+    target_2=pd.DataFrame(train_data['gas_price'],index=train_data['gas_price'].index,columns=['gas_price'])
     
     #删去target列,cty_name和id
     processed_train_data=processing_data(target_1).values
@@ -179,13 +174,11 @@ def predict(training = 1):
     va_y = processed_train_data[-combination[1]:]
     plt.plot(years,va_pred,label = 'model test')
     x = range(1,len(va_pred)+1)
-    plt.plot(years[:-2],va_y)
+    plt.plot(years[:-2],va_y,label = 'real value')
     plt.xlabel('last predicted years')
-    plt.xlabel('last predicted years')
+    plt.ylabel('price')
     plt.legend()
+    plt.title("LSTM Model")
     plt.show()
     torch.save(fm.state_dict(), 'model_lstm.pth')
     return plt,va_pred,va_y
-
-predict(1)
-predict(0)

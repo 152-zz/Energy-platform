@@ -86,7 +86,7 @@ def xgboost_func(source_data,city, feature_name,train = 1):
     source_data['year'] = pd.to_datetime(source_data['year'], format='%Y')
     source_data = source_data.sort_values(by=['year'])
     source_data = source_data.set_index(['year',])
-    train_data=source_data[source_data['id']==city]
+    train_data=source_data[source_data['country']==city]
 
     target_1=pd.DataFrame(train_data[feature_name].values,index=train_data[feature_name].index - pd.DateOffset(years=1),columns=[feature_name])
     target_1=target_1.drop(target_1.index[0])
@@ -138,7 +138,7 @@ def xgboost_func(source_data,city, feature_name,train = 1):
         train_years=int(len(processed_train_data)*subsample)
         validation_years=len(processed_train_data)-train_years
         test_years = 0
-        result = xgb_model_testing(processed_train_data,target_1,start_year,train_years,validation_years,test_years,subsample)
+        result = xgb_model_testing(processed_train_data,target_1,start_year,train_years,validation_years,test_years,subsample,X_test)
         MSE = result[0]
         va_y = result[1]
         va_pred = result[2]
@@ -155,12 +155,13 @@ def xgboost_func(source_data,city, feature_name,train = 1):
     x = range(1,len(va_pred)+1)
     plt.plot(years[:-1],va_y,label = 'real value')
     plt.xlabel('last predicted years')
-    plt.xlabel('last predicted years')
+    plt.ylabel('price')
     plt.legend()
+    plt.title("Xgboost Model")
     plt.show()
     print('train model totally using ',used_train,'pieces of data','mse:',MSE)
     return plt
-
+'''
 base_dir = os.path.dirname(os.path.realpath('__file__'))   
 parent_dir = os.path.dirname(base_dir)
 dataset_dir = os.path.join(parent_dir, 'dataset')
@@ -170,3 +171,4 @@ source_data = pd.read_csv(dataset_path)
 city = 'USA'
 feature_name = 'oil_price_2000'
 xgboost_func(source_data,city, feature_name,train = 1)
+'''

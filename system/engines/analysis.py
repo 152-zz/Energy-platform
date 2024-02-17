@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import statsmodels.api as sm
-import plotly.graph_objects as go
+#import statsmodels.api as sm
+#import plotly.graph_objects as go
 
 
 # 画各个城市时间函数的趋势线图
@@ -15,24 +15,24 @@ def trend(data, cities, feature_name,start,tail):
         ax.plot(data_group[feature_name],label='Averaged curve')
     else:
         for i in range(num):
-            filtered_data = data_time[data_time['cty_name']==cities[i]]
+            filtered_data = data_time[data_time['country']==cities[i]]
             ax.plot(filtered_data['year'],filtered_data[feature_name],label=cities[i])
     
     ax.set_xlabel('Time')
     ax.set_ylabel(feature_name)
-    ax.set_title(feature_name + ' of different cities')
-    #ax.legend()
+    ax.set_title(feature_name + ' of different countries')
+    ax.legend()
     return fig
 
 
 #某个国家不同特征的时间趋势比较
 def corr_features_cities(data, city, feature_names, start,tail):
     num = len(feature_names)
-    filtered_data = data[(start<=data['year']) & (data['year']<=tail) &(data['cty_name'] == city)]
+    filtered_data = data[(start<=data['year']) & (data['year']<=tail) &(data['country'] == city)]
     fig,ax = plt.subplots(figsize = (10,6))   
     for i in range(num):
         ax.plot(filtered_data['year'],filtered_data[feature_names[i]],label=feature_names[i])
-    #ax.legend()
+    ax.legend()
     ax.set_xlabel('time')
     ax.set_ylabel('value')
     ax.set_title('Features of '+city)
@@ -43,22 +43,23 @@ def corr_features_cities(data, city, feature_names, start,tail):
 def corr_cities(data, cities, feature_names,start,tail):
     num_cities,num_features = len(cities), len(feature_names)
     data_time = data[((start<=data['year']) & (data['year']<=tail))]
-    data_time = data_time[['cty_name'] + feature_names]
+    data_time = data_time[['country'] + feature_names]
     fig,ax = plt.subplots(figsize = (10,6))
     
-    data_group = data_time[data_time['cty_name'].map(lambda x: x in cities)].groupby('cty_name').mean()
+    data_group = data_time[data_time['country'].map(lambda x: x in cities)].groupby('country').mean()
     # # 筛选出城市在指定城市列表中的数据
-    # data_cities = data_time[data_time['cty_name'].isin(cities)]
+    # data_cities = data_time[data_time['country'].isin(cities)]
     # # 分组并计算均值
-    # data_group = data_cities.groupby('cty_name')[feature_names].mean()
+    # data_group = data_cities.groupby('country')[feature_names].mean()
     x = range(num_cities)
     bar_width = 0.15
     for i in range(num_features):
         ax.bar([j+i*bar_width for j in x],data_group[feature_names[i]].values,align='center',label=feature_names[i],width=bar_width)
     
     ax.set_xticks([j + num_features*bar_width/2 for j in x],cities)
-    ax.set_xlabel('city')
+    ax.set_xlabel('country')
     ax.set_ylabel('value')
+    ax.set_title('comparison between countries')
     ax.legend(loc='upper left')        
     return fig
 # def corr_cities(data, cities, feature_names, start, tail):
@@ -67,7 +68,7 @@ def corr_cities(data, cities, feature_names,start,tail):
 #     for feature in feature_names:
 #         for city in cities:
 #             # 筛选指定年份、城市和特征的数据
-#             filtered_data = data[(data['year'] >= start) & (data['year'] <= tail) & (data['cty_name'] == city)]
+#             filtered_data = data[(data['year'] >= start) & (data['year'] <= tail) & (data['country'] == city)]
             
 #             # 计算平均指标
 #             avg_data = filtered_data[feature].mean()
@@ -112,7 +113,7 @@ def corr_features(data, feature_names,start, tail):
 #定义时序数列转换为数据集的函数
 def season(data, city, feature_name,start,tail):
     filtered_data = data[(start<=data['year']) & (data['year']<=tail) & 
-                     (data['cty_name'] == city)]
+                     (data['country'] == city)]
     filtered_data = filtered_data[['year']+[feature_name]]
     
     # Construct the seasonal decomposition model
@@ -134,18 +135,18 @@ def season(data, city, feature_name,start,tail):
 
 if __name__ == "__main__":
     # Read data
-    data = pd.read_csv('./Dataset/Oil and Gas 1932-2014.csv')
+    data = pd.read_csv('../dataset/data.csv')
     data.head()
-    fig = season(data, 'Afghanistan', 'oil_price_nom',1978,2014)
+    #fig = season(data, 'Afghanistan', 'oil_price',1978,2014)
+    #plt.show()
+    fig = trend(data,['Afghanistan','Albania'],'gas_product',2000,2010)
     plt.show()
-    fig = trend(data,['Afghanistan','Albania'],'iso3numeric',2000,2010)
-    plt.show()
-    fig = corr_features_cities(data,'Afghanistan',['oil_price_2000','mult_nom_2000'],2000,2010)
+    fig = corr_features_cities(data,'Afghanistan',['oil_price','oil_exports'],2000,2010)
     plt.show()
 
-    fig = corr_cities(data,['Algeria','Argentina'],['oil_value_nom','oil_value_2000','oil_value_2014'],2000,2010)
+    fig = corr_cities(data,['Algeria','Argentina'],['gas_product','oil_exports','gas_price'],2000,2010)
     plt.show()
-    fig = corr_features(data,['gas_value_2000','gas_prod55_14','gas_price_2000'],1950,2010)
+    fig = corr_features(data,['gas_product','oil_exports','gas_price'],1950,2010)
     plt.show()
 
 
