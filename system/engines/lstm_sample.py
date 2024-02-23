@@ -82,7 +82,7 @@ def LSTM_model_training(data,learning_rate,tw=12,predicttime=12):
     test_inputs = train_data_normalized[-train_window:].tolist()
     model.eval()
     
-    for i in range(predicttime+2):
+    for i in range(predicttime+1):
         seq = torch.FloatTensor(test_inputs[-train_window:])
         with torch.no_grad():
             model.hidden_cell = (torch.zeros(1, 1, model.hidden_layer_size),
@@ -93,7 +93,6 @@ def LSTM_model_training(data,learning_rate,tw=12,predicttime=12):
     return pre,model
 
 def LSTM_model_test(data,learning_rate,tw=12,predicttime=12):
-    Le = len(data)
     scaler = MinMaxScaler(feature_range=(-1, 1))
     processed_train_data = scaler.fit_transform(data.reshape(-1, 1))
     train_data_normalized = torch.FloatTensor(processed_train_data).view(-1)
@@ -107,7 +106,7 @@ def LSTM_model_test(data,learning_rate,tw=12,predicttime=12):
     model.eval()
 
     test_inputs = train_data_normalized[-train_window:].tolist()
-    for i in range(predicttime+2):
+    for i in range(predicttime+1):
         seq = torch.FloatTensor(test_inputs[-train_window:])
         with torch.no_grad():
             model.hidden_cell = (torch.zeros(1, 1, model.hidden_layer_size),
@@ -125,7 +124,7 @@ def predict(data,training = 1):
     print(current_date)
     source_data = source_data.sort_values(by=['year'])
     source_data = source_data.set_index(['year',])
-    train_data=source_data[source_data['id']=='USA']
+    train_data=source_data[source_data['country']=='USA']
     
     #target列设置为oil_price_2000
     target_1=pd.DataFrame(train_data['oil_price'],index=train_data['oil_price'].index,columns=['oil_price'])
@@ -134,7 +133,7 @@ def predict(data,training = 1):
     #删去target列,cty_name和id
     processed_train_data=processing_data(target_1).values
     tw=[6,8,10,12]
-    predicttime=[8]
+    predicttime=[5,8,10]
     lr=[0.01,0.05]
     MSE=1000000
     combination=[0,0,0]
@@ -148,17 +147,19 @@ def predict(data,training = 1):
                 print("pt:",pt)
                 print("lr:",lrate)
                 if training == 1:
-                    result,model=LSTM_model_training(processed_train_data[:-pt],lrate,wind,pt)
+                    result_temp,model=LSTM_model_training(processed_train_data[:-pt],lrate,wind,pt)
+                    result,model=LSTM_model_test(processed_train_data[:-20],lrate,wind,20)
+                    print(len(result))
                 else:
-                    result,model=LSTM_model_test(processed_train_data[:-pt],lrate,wind,pt)                   
+                    result,model=LSTM_model_test(processed_train_data[:-20],lrate,wind,20)
+                    print(len(result))
                 result=np.array(result)
-                print(result[:-2]-np.array(processed_train_data[-pt:]))
-                MSE_r =np.mean(np.sum((result[:-2]-np.array(processed_train_data[-pt:]))**2))
+                print(result[:-1]-np.array(processed_train_data[-20:]))
+                MSE_r =np.mean(np.sum((result[:-1]-np.array(processed_train_data[-20:]))**2))
                 #find best prediction:
                 if MSE_r < MSE:
                     MSE = MSE_r
                     print(MSE_r)
-                    va_y = np.array(processed_train_data[-pt:])
                     va_pred = result
                     combination[0] = x
                     combination[1] = y
@@ -166,15 +167,15 @@ def predict(data,training = 1):
                     fm = model  
                 
     #vasualization:
-    x = range(0,predicttime[0]+2)
+    x = range(0,21)
     years = []
     for i in x[::-1]:
-        years.append(current_date + pd.DateOffset(years=2) - pd.DateOffset(years=i))
+        years.append(current_date + pd.DateOffset(years=1) - pd.DateOffset(years=i))
     
-    va_y = processed_train_data[-combination[1]:]
+    va_y = np.array(processed_train_data[-20:])
     plt.plot(years,va_pred,label = 'model test')
-    x = range(1,len(va_pred)+1)
-    plt.plot(years[:-2],va_y,label = 'real value')
+    #x = range(1,len(va_pred)+1)
+    plt.plot(years[:-1],va_y,label = 'real value')
     plt.xlabel('last predicted years')
     plt.ylabel('price')
     plt.legend()

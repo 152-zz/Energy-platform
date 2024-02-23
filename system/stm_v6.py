@@ -32,7 +32,7 @@ if page == 'Main Page':
         st.markdown("[![GitHub](https://img.shields.io/badge/-GitHub-black?logo=github&style=flat-square)](https://github.com/msdm-ust/energyintel_data_platform)", unsafe_allow_html=True)
     st.sidebar.write('Sidebar for Main Page')
     st.write('Content for Main Page')
-    image_path = 'system/image1.jpeg'
+    image_path = 'image1.jpeg'
     st.image(image_path, caption='Oil & Gas', use_column_width=True)
 
 elif page == 'Visualization':
