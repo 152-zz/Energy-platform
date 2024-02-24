@@ -156,7 +156,7 @@ def xgboost_func(source_data,city, feature_name,train = 1):
     plt.title("Xgboost Model")
     plt.show()
     print('train model totally using ',used_train,'pieces of data','mse:',MSE)
-    return plt
+    return plt,va_pred,years
 '''
 base_dir = os.path.dirname(os.path.realpath('__file__'))   
 parent_dir = os.path.dirname(base_dir)

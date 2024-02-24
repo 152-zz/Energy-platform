@@ -124,7 +124,7 @@ def predict(data,training = 1):
     print(current_date)
     source_data = source_data.sort_values(by=['year'])
     source_data = source_data.set_index(['year',])
-    train_data=source_data[source_data['country']=='USA']
+    train_data=source_data[source_data['id']=='USA']
     
     #target列设置为oil_price_2000
     target_1=pd.DataFrame(train_data['oil_price'],index=train_data['oil_price'].index,columns=['oil_price'])
@@ -182,4 +182,4 @@ def predict(data,training = 1):
     plt.title("LSTM Model")
     plt.show()
     torch.save(fm.state_dict(), 'model_lstm.pth')
-    return plt,va_pred,va_y
+    return plt,va_pred,years

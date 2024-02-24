@@ -7,7 +7,7 @@ from statsmodels.tsa.arima.model import ARIMA
 
 def pred_arima(data, city, feature_name, start, tail):
     filtered_data = data[(start<=data['year']) & (data['year']<=tail) & 
-                     (data['cty_name'] == city)].set_index('year')
+                     (data['country'] == city)].set_index('year')
     filtered_data = filtered_data[feature_name]
     fig_vis_data, ax = plt.subplots(figsize=(10, 8))
     # 可视化时间序列数据

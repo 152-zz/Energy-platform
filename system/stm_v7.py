@@ -12,6 +12,10 @@ import engines.analysis as ana
 import engines.arima as ari
 import engines.xgboost_sample as xgb
 import engines.lstm_sample as lstm
+import engines.GRU as gru
+from engines.GRU import RNNModel
+import engines.Randomforest as rf
+import engines.LightGBM as lg
 import os
 
 # 定义页面标识
@@ -32,7 +36,7 @@ if page == 'Main Page':
         st.markdown("[![GitHub](https://img.shields.io/badge/-GitHub-black?logo=github&style=flat-square)](https://github.com/msdm-ust/energyintel_data_platform)", unsafe_allow_html=True)
     st.sidebar.write('Sidebar for Main Page')
     st.write('Content for Main Page')
-    image_path = 'image1.jpeg'
+    image_path = 'system/image1.jpeg'
     st.image(image_path, caption='Oil & Gas', use_column_width=True)
 
 elif page == 'Visualization':
@@ -58,17 +62,16 @@ elif page == 'Visualization':
         
     cities = data["country"].unique().tolist()
     
-    st.sidebar.text('2.year')
-    start_year = st.sidebar.text_input('start year','1932')
-    end_year = st.sidebar.text_input('end year','2014')
-    
-    if start_year > end_year:
-        st.sidebar.error("The end year must later than the start year!")
+    min_year, max_year = int(data['year'].min()), int(data['year'].max())
+    start_year = st.slider("Choose start year", min_year, max_year, min_year)
+    end_year = st.slider("Choose end year", min_year, max_year, max_year)
+    if end_year < start_year:
+            st.error("The end year must later than the start year!")
     else:
-        patterns = ['mutiple cities with one feature','mutiple features in one city']
+        patterns = ['Mutiple cities with one feature','mutiple features in one city']
         pattern_option = st.selectbox('Please select a pattern',patterns)
         
-        if pattern_option == 'mutiple cities with one feature':
+        if pattern_option == 'Mutiple cities with one feature':
             cities_option = st.multiselect('Please select one or more cities',cities)
             feature_option = st.selectbox('Please select one feature',features)
             
@@ -76,7 +79,7 @@ elif page == 'Visualization':
             if cities_option:
                 st.pyplot(fig)
                 
-        elif pattern_option == 'mutiple features in one city':
+        elif pattern_option == 'Mutiple features in one city':
             city_option = st.selectbox('Please select one or more cities',cities)
             features_option = st.multiselect('Please select one feature',features)
             fig = ana.corr_features_cities(data,city_option,features_option,int(start_year),int(end_year))
@@ -114,15 +117,11 @@ elif page == 'Analysis':
         if features_option:
             st.pyplot(fig)
 
-
-
     # 这里添加检测outliers的代码
     elif outlier_option == 'Drop':
         data = data.bfill()
         st.write('Outliers have been dropped...')
         # 这里添加剔除outliers的代码
-    
-
 
         #patterns = ['correlation with cities','correlation with features',"seasonal trend decomposition"]
         patterns = ['correlation with cities','correlation with features']
@@ -191,10 +190,6 @@ elif page == 'Analysis':
                 fig = ana.season(data, cities_option, feature_option, start_year, end_year)
                 st.pyplot(fig)
 
-
-
-
-
 elif page == 'Prediction':
     # Logo and Navigation
     col1, col2, col3 = st.columns((1, 4, 1))
@@ -223,28 +218,69 @@ elif page == 'Prediction':
     
     cities = data["country"].unique().tolist()
     default_cities_index = cities.index('United States')
-    default_features_index = features.index('oil_price')
+    if energy_option == 'Oil':
+        default_features_index = features.index('oil_price')
+    elif energy_option == 'Gas':
+        default_features_index = features.index('gas_price')
 
-    model_option = st.sidebar.radio('2.Model Options', ['Linear', 'Tree','Random Forest','LSTM','XGBoost'])
+    model_option = st.sidebar.radio('2.Model Options', ['Linear','Decision Tree','Random Forest','LightGBM','RNN','GRU','LSTM','XGBoost','Arima'])
 
     city_option = st.selectbox('Please select one cities',cities,index = default_cities_index)
     feature_option = st.selectbox('Please select one feature',features,index = default_features_index)
 
     if model_option == 'Linear':
         st.write("Linear Model Result:")
-    elif model_option == 'Tree':
-        st.write("Tree Model Result:")
+    elif model_option == 'Decision Tree':
+        st.write("Decision Tree Model Result:")
     elif model_option == 'Random Forest':
         st.write("Random Forest Model Result:")
-    elif model_option == 'RNN Model Result':
+        plt,pred,years = rf.randomforest_func(data,city_option,feature_option,0)
+        data = {}
+        df = pd.DataFrame(data)
+        for i in range(len(years) - 5,len(years)):
+            y = years[i].strftime("%Y-%m-%d")
+            y = y[:4]
+            df[y] = pred[i]
+        st.write(df)
+        st.pyplot(plt)
+    elif model_option == 'LightGBM':
+        st.write('LightGBM Model Result')
+        plt,pred,years = lg.lightgbm_func(data,city_option,feature_option,0)
+        data = {}
+        df = pd.DataFrame(data)
+        for i in range(len(years) - 5,len(years)):
+            y = years[i].strftime("%Y-%m-%d")
+            y = y[:4]
+            df[y] = pred[i]
+        st.write(df)
+        st.pyplot(plt)
+    elif model_option == 'RNN':
         st.write("RNN Model Result:")
+    elif model_option == 'GRU':
+        st.write("GRU Model Result:")
+        fig = gru.GRU_model("Afghanistan","oil_price",1934,2014)
+        st.pyplot(fig)
     elif model_option == 'LSTM':
         st.write("LSTM Model Result:")
-        fig,_,_ = lstm.predict(data,0)
+        fig,pred,years = lstm.predict(data,0)
+        data = {}
+        df = pd.DataFrame(data)
+        for i in range(len(years) - 5,len(years)):
+            y = years[i].strftime("%Y-%m-%d")
+            y = y[:4]
+            df[y] = pred[i]
+        st.write(df)
         st.pyplot(fig)
     elif model_option == 'XGBoost':
         st.write("XGBoost Model Result:")
-        fig = xgb.xgboost_func(data,city_option,feature_option,0)
+        fig,pred,years = xgb.xgboost_func(data,city_option,feature_option,0)
+        data = {}
+        df = pd.DataFrame(data)
+        for i in range(len(years) - 5,len(years)):
+            y = years[i].strftime("%Y-%m-%d")
+            y = y[:4]
+            df[y] = pred[i]
+        st.write(df)
         st.pyplot(fig)
     elif model_option == 'Arima':
         st.title("ARIMA")
@@ -270,4 +306,3 @@ elif page == 'Prediction':
             st.pyplot(figs[2])
             st.pyplot(figs[3])
             st.write(result)
-
