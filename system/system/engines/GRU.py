@@ -86,7 +86,7 @@ def GRU_model(country,feature,start,tail):
     year,x = getdata(country,feature,start,tail)
     # 加载保存的整个模型
     num_steps = 5
-    net = torch.load('./gru_model.pth')
+    net = torch.load('./system/models/gru_model.pth')
     output = predict(net,x,num_steps,num_preds=0,input_size = 1)
     fig = vis_data(year,x,output,train_test_rate= None)
     return fig

@@ -66,8 +66,8 @@ def xgb_model_testing(data,target,start_year,train_years,validation_years,test_y
     y_validation=target.loc[validation_start:validation_end].values  
     print("start model training:")
     xgb_reg=XGBR()
-    folder_path = "./model"  
-    model_file = "Xgboost"+city+feature+'.bin'
+    folder_path = "./system/engines/model"  
+    model_file = "Xgboost"+city+feature_name+'.xgb'
     model_path = os.path.join(folder_path, model_file)
     xgb_reg.load_model(model_path)
     y_pred=xgb_reg.predict(X_validation)
@@ -129,7 +129,7 @@ def xgboost_func(source_data,city, feature_name,train = 1):
                         combination[2] = z
                         fmodel = result[3]
                         print(combination)
-        folder_path = "./model"  
+        folder_path = "./system/engines/model"  
         model_file = "Xgboost"+city+feature_name+'.bin'
         model_path = os.path.join(folder_path, model_file)
         fmodel.save_model(model_path)
