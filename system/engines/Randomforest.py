@@ -126,7 +126,10 @@ def randomforest_func(source_data,city, feature_name,train = 1):
                             combination[2] = z
                             combination[3] = a
                             fmodel = result[3]
-        joblib.dump(fmodel, 'Randomforest.pkl')
+        folder_path = "./model"  # 文件夹路径
+        model_file = 'RandomForest'+city+feature_name+'.joblib'
+        model_path = os.path.join(folder_path, model_file)
+        joblib.dump(fmodel,model_path )
         print(combination)
         
     subsample=0.7
@@ -134,7 +137,10 @@ def randomforest_func(source_data,city, feature_name,train = 1):
     start_year=1932
     train_years=int(len(processed_train_data)*subsample)
     validation_years=len(processed_train_data)-train_years
-    model = joblib.load('Randomforest.pkl')
+    folder_path = "./model"  # 文件夹路径
+    model_file = 'RandomForest'+city+feature_name+'.joblib'
+    model_path = os.path.join(folder_path, model_file)
+    model = joblib.load(model_path)
     result = rf_model_testing(model,processed_train_data,target_1,start_year,train_years,validation_years,subsample,X_test)
     MSE = result[0]
     va_y = result[1]

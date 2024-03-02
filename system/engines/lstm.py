@@ -45,7 +45,7 @@ class LSTM(nn.Module):
         predictions = self.linear(lstm_out.view(len(input_seq), -1))
         return predictions[-1]
 
-def LSTM_model_training(data,learning_rate,tw=12,predicttime=12):
+def LSTM_model_training(data,learning_rate,city,tw=12,predicttime=12):
     print(len(data))
     scaler = MinMaxScaler(feature_range=(-1, 1))
     processed_train_data = scaler.fit_transform(data.reshape(-1, 1))
@@ -82,6 +82,11 @@ def LSTM_model_training(data,learning_rate,tw=12,predicttime=12):
     test_inputs = train_data_normalized[-train_window:].tolist()
     model.eval()
     
+    folder_path = "./model"  
+    model_file = 'Lstm'+city+'.pth' 
+    model_path = os.path.join(folder_path, model_file)
+    torch.save(model.state_dict(), model_path)
+    
     for i in range(predicttime+1):
         seq = torch.FloatTensor(test_inputs[-train_window:])
         with torch.no_grad():
@@ -92,7 +97,7 @@ def LSTM_model_training(data,learning_rate,tw=12,predicttime=12):
     pre = scaler.inverse_transform(pre.reshape(-1,1))
     return pre,model
 
-def LSTM_model_test(data,learning_rate,tw=12,predicttime=12):
+def LSTM_model_test(data,learning_rate,city,tw=12,predicttime=12):
     scaler = MinMaxScaler(feature_range=(-1, 1))
     processed_train_data = scaler.fit_transform(data.reshape(-1, 1))
     train_data_normalized = torch.FloatTensor(processed_train_data).view(-1)
@@ -102,7 +107,10 @@ def LSTM_model_test(data,learning_rate,tw=12,predicttime=12):
     train_window = tw
     
     model = LSTM()
-    model.load_state_dict(torch.load('model_lstm.pth'))
+    folder_path = "./model"  # 文件夹路径
+    model_file = '/Lstm'+city+'.pth'  # 模型文件名
+    model_path = os.path.join(folder_path, model_file)
+    model.load_state_dict(torch.load(model_path))
     model.eval()
 
     test_inputs = train_data_normalized[-train_window:].tolist()
@@ -116,7 +124,7 @@ def LSTM_model_test(data,learning_rate,tw=12,predicttime=12):
     pre = scaler.inverse_transform(pre.reshape(-1,1))
     return pre,model
 
-def predict(data,training = 1):
+def predict(data,city,target,training = 1):
     #Set year as index
     source_data = data
     source_data['year'] = pd.to_datetime(source_data['year'], format='%Y')
@@ -124,11 +132,10 @@ def predict(data,training = 1):
     print(current_date)
     source_data = source_data.sort_values(by=['year'])
     source_data = source_data.set_index(['year',])
-    train_data=source_data[source_data['id']=='USA']
+    train_data=source_data[source_data['country']==city]
     
     #target列设置为oil_price_2000
-    target_1=pd.DataFrame(train_data['oil_price'],index=train_data['oil_price'].index,columns=['oil_price'])
-    target_2=pd.DataFrame(train_data['gas_price'],index=train_data['gas_price'].index,columns=['gas_price'])
+    target_1=pd.DataFrame(train_data[target],index=train_data[target].index,columns=[target])
     
     #删去target列,cty_name和id
     processed_train_data=processing_data(target_1).values
@@ -151,7 +158,7 @@ def predict(data,training = 1):
                     result,model=LSTM_model_test(processed_train_data[:-20],lrate,wind,20)
                     print(len(result))
                 else:
-                    result,model=LSTM_model_test(processed_train_data[:-20],lrate,wind,20)
+                    result,model=LSTM_model_test(processed_train_data[:-20],lrate,wind,20,city = city)
                     print(len(result))
                 result=np.array(result)
                 print(result[:-1]-np.array(processed_train_data[-20:]))
@@ -165,7 +172,10 @@ def predict(data,training = 1):
                     combination[1] = y
                     combination[2] = z
                     fm = model  
-                
+    folder_path = "./model"  
+    model_file = 'Lstm'+city+target+'.pth' 
+    model_path = os.path.join(folder_path, model_file)
+    torch.save(fm.state_dict(), model_path)            
     #vasualization:
     x = range(0,21)
     years = []

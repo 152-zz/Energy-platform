@@ -95,7 +95,7 @@ def lgb_model_testing(trained_model,data,target,start_year,train_years,validatio
     return mean_square_error,va_y,va_y_pred
 #Set year as index
 
-def lightgbm_func(source_data,city, feature_name,train = 1):
+def lightgbm_func(source_data,city,feature_name,train = 1):
     source_data['year'] = pd.to_datetime(source_data['year'], format='%Y')
     source_data = source_data.sort_values(by=['year'])
     source_data = source_data.set_index(['year',])
@@ -141,7 +141,10 @@ def lightgbm_func(source_data,city, feature_name,train = 1):
                             combination[2] = z
                             combination[3] = a
                             fmodel = result[3]
-        fmodel.save_model('LightGBM.txt')
+        folder_path = "./model"  
+        model_file ='LightGBM'+city+feature_name+'.txt'  
+        model_path = os.path.join(folder_path, model_file)
+        fmodel.save_model(model_path)
         print(combination)
         
     subsample=0.7
@@ -149,7 +152,11 @@ def lightgbm_func(source_data,city, feature_name,train = 1):
     start_year=1932
     train_years=int(len(processed_train_data)*subsample)
     validation_years=len(processed_train_data)-train_years
-    model = lgb.Booster(model_file='LightGBM.txt')
+    
+    folder_path = "./model"  
+    model_file ='LightGBM'+city+feature_name+'.txt'  
+    model_path = os.path.join(folder_path, model_file)
+    model = lgb.Booster(model_file=model_path)
     result = lgb_model_testing(model,processed_train_data,target_1,start_year,train_years,validation_years,subsample,X_test)
     MSE = result[0]
     va_y = result[1]

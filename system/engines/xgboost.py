@@ -54,7 +54,7 @@ def xgb_model_training(data,target,start_year,train_years,validation_years,test_
     va_y_pred = np.vstack((va_y_pred, y_pred_test))
     return mean_square_error,va_y,va_y_pred,xgb_reg
 
-def xgb_model_testing(data,target,start_year,train_years,validation_years,test_years,subsample,X_test):
+def xgb_model_testing(data,target,start_year,train_years,validation_years,test_years,subsample,X_test,city,feature_name):
     train_start=pd.to_datetime(str(start_year))
     train_end=train_start+pd.DateOffset(years=train_years)-pd.DateOffset(days=1)
     validation_start=train_end+pd.DateOffset(days=1)
@@ -66,7 +66,10 @@ def xgb_model_testing(data,target,start_year,train_years,validation_years,test_y
     y_validation=target.loc[validation_start:validation_end].values  
     print("start model training:")
     xgb_reg=XGBR()
-    xgb_reg.load_model('xgboost.model')
+    folder_path = "./model"  
+    model_file = "Xgboost"+city+feature+'.bin'
+    model_path = os.path.join(folder_path, model_file)
+    xgb_reg.load_model(model_path)
     y_pred=xgb_reg.predict(X_validation)
     
     #calculate mse of validation set
@@ -126,7 +129,10 @@ def xgboost_func(source_data,city, feature_name,train = 1):
                         combination[2] = z
                         fmodel = result[3]
                         print(combination)
-        fmodel.save_model('xgboost.model')
+        folder_path = "./model"  
+        model_file = "Xgboost"+city+feature_name+'.bin'
+        model_path = os.path.join(folder_path, model_file)
+        fmodel.save_model(model_path)
     else:
         subsample=0.7
         print("subsample:",subsample)
@@ -134,7 +140,7 @@ def xgboost_func(source_data,city, feature_name,train = 1):
         train_years=int(len(processed_train_data)*subsample)
         validation_years=len(processed_train_data)-train_years
         test_years = 0
-        result = xgb_model_testing(processed_train_data,target_1,start_year,train_years,validation_years,test_years,subsample,X_test)
+        result = xgb_model_testing(processed_train_data,target_1,start_year,train_years,validation_years,test_years,subsample,X_test,city=city,feature_name=feature_name)
         MSE = result[0]
         va_y = result[1]
         va_pred = result[2]
